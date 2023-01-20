@@ -5,7 +5,7 @@ import dayjs from 'dayjs'
 import {prisma} from "./lib/prisma"
 
 export async function appRoutes(app: FastifyInstance) {
-    app.post('/habits', async (request, reply) => {
+    app.post('/habits', async (request) => {
 
         const createHabitBody = z.object({
             title: z.string(),
@@ -29,8 +29,6 @@ export async function appRoutes(app: FastifyInstance) {
                 }
             }
         })
-
-        return reply.status(201)
     })
 
     app.get('/day', async (request) => {
