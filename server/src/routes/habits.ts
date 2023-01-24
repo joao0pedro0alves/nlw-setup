@@ -10,7 +10,7 @@ export async function habitRoutes(app: FastifyInstance) {
 
         const createHabitBody = z.object({
             title: z.string(),
-            weekDays: z.array(z.number()).max(6),
+            weekDays: z.array(z.number()).max(7),
         })
 
         // [0, 1, 2, 3, 4, 5, 6] => Domingo, Segunda, Terça, ...
@@ -23,6 +23,7 @@ export async function habitRoutes(app: FastifyInstance) {
             data: {
                 title,
                 created_at: today,
+                user_id: request.user.sub,
                 weekDays: {
                     create: weekDays.map(weekDay => ({
                         week_day: weekDay
@@ -50,17 +51,21 @@ export async function habitRoutes(app: FastifyInstance) {
                 created_at: {
                     lte: date,
                 },
+                user_id: request.user.sub,
                 weekDays: {
                     some: {
                         week_day: weekDay
                     }
-                }
+                },
             }
         })
 
         const day = await prisma.day.findUnique({
             where: {
-                date: parsedDate.toDate()
+                date_user_id: {
+                    date: parsedDate.toDate(),
+                    user_id: request.user.sub
+                }
             },
             include: {
                 dayHabits: true
@@ -86,14 +91,18 @@ export async function habitRoutes(app: FastifyInstance) {
 
         let day = await prisma.day.findUnique({
             where: {
-                date: today
+                date_user_id: {
+                    date: today,
+                    user_id: request.user.sub
+                }
             }
         })
 
         if (!day) {
             day = await prisma.day.create({
                 data: {
-                    date: today
+                    date: today,
+                    user_id: request.user.sub
                 }
             })
         }
@@ -153,6 +162,7 @@ export async function habitRoutes(app: FastifyInstance) {
                         AND H.created_at <= D.date
                 ) as amount
            FROM days D
+           WHERE D.user_id = ${request.user.sub}
         `
 
         return {summary}

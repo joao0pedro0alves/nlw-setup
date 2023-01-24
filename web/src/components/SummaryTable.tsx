@@ -19,12 +19,14 @@ interface SummaryItem {
 
 export function SummaryTable() {
     const [summary, setSummary] = useState<SummaryItem[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
 
         async function fetchSummary() {
             const response = await api.get('summary')
             setSummary(response.data.summary)
+            setLoading(false)
         }
 
         fetchSummary()
@@ -44,7 +46,7 @@ export function SummaryTable() {
             </div>
 
             <div className="grid grid-rows-7 grid-flow-col gap-3">
-                {summary.length > 0 && summaryDates.map((date) => {
+                {!loading && summaryDates.map((date) => {
                     const dayInSummary = summary.find(summaryItem => {
                         return dayjs(date).isSame(summaryItem.date, 'day')
                     })

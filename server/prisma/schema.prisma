@@ -21,7 +21,8 @@ model User {
   email      String   @unique
   createdAt  DateTime @default(now())
 
-  days Day[]
+  days   Day[]
+  habits Habit[]
 
   @@map("users")
 }
@@ -31,8 +32,12 @@ model Habit {
   title      String
   created_at DateTime
 
+  user_id String?
+
   dayHabits DayHabit[]
   weekDays  HabitWeekDays[]
+
+  user User? @relation(fields: [user_id], references: [id])
 
   @@map("habits")
 }
@@ -57,7 +62,7 @@ model Day {
   dayHabits DayHabit[]
   user      User?      @relation(fields: [user_id], references: [id])
 
-  @@unique([date])
+  @@unique([date, user_id])
   @@map("days")
 }
 
