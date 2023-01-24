@@ -1,29 +1,22 @@
 import {FormEvent, useState} from "react"
-import {useSignInWithEmailAndPassword} from 'react-firebase-hooks/auth'
 import {CaretRight} from "phosphor-react"
 import {Link} from "react-router-dom"
 
 import logoImage from "../assets/logo.svg"
-import {auth} from '../lib/firebase'
 
+import {useAuth} from "../hooks/useAuth"
 import {FirebaseLoading} from "../components/FirebaseLoading"
 
 export function Signin() {
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
+    const [email, setEmail] = useState('joao.alves@gmail.com')
+    const [password, setPassword] = useState('abc@123')
 
-    const [
-        signInWithEmailAndPassword,
-        user,
-        loading,
-        error
-    ] = useSignInWithEmailAndPassword(auth)
+    const {signIn, loading} = useAuth()
 
     function handleSignIn(event: FormEvent) {
         event.preventDefault()
-
-        signInWithEmailAndPassword(email, password)
+        signIn({email, password})
     }
 
     if (loading) {

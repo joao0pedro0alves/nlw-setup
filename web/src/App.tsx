@@ -1,8 +1,13 @@
 import "./styles/global.css"
 import "./lib/dayjs"
 
+import {AuthContextProvider} from "./contexts/Auth"
 import {Routes} from "./routes"
 
 export function App() {
-    return <Routes />
+    return (
+        <AuthContextProvider>
+            <Routes />
+        </AuthContextProvider>
+    )
 }
