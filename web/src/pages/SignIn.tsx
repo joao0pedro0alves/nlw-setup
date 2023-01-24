@@ -1,14 +1,13 @@
-import {FormEvent, useState} from "react"
-import {CaretRight} from "phosphor-react"
-import {Link} from "react-router-dom"
+import {FormEvent, useState} from 'react'
+import {CaretRight} from 'phosphor-react'
+import {Link} from 'react-router-dom'
 
-import logoImage from "../assets/logo.svg"
+import logoImage from '../assets/logo.svg'
 
-import {useAuth} from "../hooks/useAuth"
-import {FirebaseLoading} from "../components/FirebaseLoading"
+import {useAuth} from '../hooks/useAuth'
+import {FirebaseLoading} from '../components/FirebaseLoading'
 
 export function Signin() {
-
     const [email, setEmail] = useState('joao.alves@gmail.com')
     const [password, setPassword] = useState('abc@123')
 
@@ -25,8 +24,10 @@ export function Signin() {
 
     return (
         <div className="w-screen h-screen flex flex-col justify-center items-center">
-
-            <form onSubmit={handleSignIn} className="flex flex-col min-w-[400px]">
+            <form
+                onSubmit={handleSignIn}
+                className="flex flex-col min-w-[400px]"
+            >
                 <div className="mb-6">
                     <img src={logoImage} alt="Habits" />
                 </div>
@@ -35,7 +36,10 @@ export function Signin() {
                     Faça login na plataforma
                 </p>
 
-                <label className="font-semibold leading-tight mt-4" htmlFor="email">
+                <label
+                    className="font-semibold leading-tight mt-4"
+                    htmlFor="email"
+                >
                     E-mail
                 </label>
 
@@ -46,10 +50,13 @@ export function Signin() {
                     className="p-4 rounded-lg mt-3 bg-zinc-800 text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
                     autoFocus
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
-                />      
+                    onChange={(e) => setEmail(e.target.value)}
+                />
 
-                <label className="font-semibold leading-tight mt-4" htmlFor="password">
+                <label
+                    className="font-semibold leading-tight mt-4"
+                    htmlFor="password"
+                >
                     Senha
                 </label>
 
@@ -59,7 +66,7 @@ export function Signin() {
                     placeholder="Qual sua senha?"
                     className="p-4 rounded-lg mt-3 bg-zinc-800 text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                 />
 
                 <button
@@ -70,11 +77,19 @@ export function Signin() {
                 </button>
             </form>
 
-            <span
-                className='flex gap-2 items-center mt-6'
-            >
-                Não possui uma conta? <Link to='register' className="text-sm font-bold text-violet-500 hover:underline hover:text-violet-600">Registre-se</Link>
-                <CaretRight weight="bold" className="text-violet-500" size={16} />
+            <span className="flex gap-2 items-center mt-6">
+                Não possui uma conta?{' '}
+                <Link
+                    to="register"
+                    className="text-sm font-bold text-violet-500 hover:underline hover:text-violet-600"
+                >
+                    Registre-se
+                </Link>
+                <CaretRight
+                    weight="bold"
+                    className="text-violet-500"
+                    size={16}
+                />
             </span>
         </div>
     )

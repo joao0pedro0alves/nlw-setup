@@ -1,24 +1,53 @@
-import {FormEvent, useState} from "react"
-import {useCreateUserWithEmailAndPassword} from "react-firebase-hooks/auth"
-import {Link} from "react-router-dom"
-import {CaretLeft} from "phosphor-react"
+import {FormEvent, useState, useEffect} from 'react'
+import {useCreateUserWithEmailAndPassword} from 'react-firebase-hooks/auth'
+import {Link} from 'react-router-dom'
+import {CaretLeft} from 'phosphor-react'
+import {toast} from 'react-toastify'
 
-import logoImage from "../assets/logo.svg"
-import {auth} from "../lib/firebase"
+import logoImage from '../assets/logo.svg'
+import {auth} from '../lib/firebase'
+import {api} from '../lib/axios'
 
-import {FirebaseLoading} from "../components/FirebaseLoading"
+import {FirebaseLoading} from '../components/FirebaseLoading'
 
 export function Register() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
 
-    const [createUserWithEmailAndPassword, user, loading, error] =
+    const [createUserWithEmailAndPassword, result, loading, error] =
         useCreateUserWithEmailAndPassword(auth)
 
-    function createUser(event: FormEvent) {
+    function handleSubmit(event: FormEvent) {
         event.preventDefault()
         createUserWithEmailAndPassword(email, password)
     }
+
+    useEffect(() => {
+        async function createUser() {
+            try {
+                if (result) {
+                    await api.post('/users', {
+                        name: 'João Pedro',
+                        firebaseId: result.user.uid,
+                        email: result.user.email,
+                    })
+                }
+            } catch (error) {
+                toast.error(`${error}`)
+            }
+
+            setEmail('')
+            setPassword('')
+        }
+
+        createUser()
+    }, [result])
+
+    useEffect(() => {
+        if (error) {
+            toast.dark(`Falha ao completar a requisição: ${error}`)
+        }
+    }, [error])
 
     if (loading) {
         return <FirebaseLoading loadingText="Registrando usuário..." />
@@ -26,7 +55,10 @@ export function Register() {
 
     return (
         <div className="w-screen h-screen flex flex-col justify-center items-center">
-            <form onSubmit={createUser} className="flex flex-col min-w-[400px]">
+            <form
+                onSubmit={handleSubmit}
+                className="flex flex-col min-w-[400px]"
+            >
                 <div className="mb-6">
                     <img src={logoImage} alt="Habits" />
                 </div>

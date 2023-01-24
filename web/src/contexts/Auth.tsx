@@ -1,11 +1,13 @@
 import {ReactNode, createContext, useEffect, useState} from "react"
 import {useSignInWithEmailAndPassword} from 'react-firebase-hooks/auth'
+import {toast} from 'react-toastify'
 
 import {auth} from '../lib/firebase'
 import {CURRENT_USER, TOKEN} from "../constants/storage"
-// import {api} from "../lib/axios"
+import {api} from "../lib/axios"
 
 interface User {
+    name: string
     email: string
 }
 
@@ -28,7 +30,20 @@ interface AuthProviderProps {
 export const AuthContext = createContext({} as AuthContextData)
 
 export function AuthContextProvider({children}: AuthProviderProps) {
-    const [user, setUser] = useState({} as User)
+    const [user, setUser] = useState<User>(() => {
+        const storagedToken = localStorage.getItem(TOKEN)
+        const storagedUser = localStorage.getItem(CURRENT_USER)
+
+        if (storagedToken && storagedUser) {
+            const user = JSON.parse(storagedUser)
+            const token = JSON.parse(storagedToken)
+
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+            return user as User
+        }
+
+        return {} as User
+    })
 
     const [
         signInWithEmailAndPassword,
@@ -38,19 +53,37 @@ export function AuthContextProvider({children}: AuthProviderProps) {
     ] = useSignInWithEmailAndPassword(auth)
 
     useEffect(() => {
-        if (userCredencial) {
-            // localStorage.setItem(TOKEN)
-            // localStorage.setItem(CURRENT_USER)
 
-            setUser({
-                email: userCredencial.user.email || ''
-            })
+        async function createSession() {
+            try {
+                if (userCredencial) {
+        
+                    const tokenResponse = await api.post('/session', {
+                        firebaseId: userCredencial.user.uid
+                    })
+
+                    const token = tokenResponse.data.token
+                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+                    const userInfoResponse = await api.get('/me')
+                    const user = userInfoResponse.data.user
+            
+                    setUser(user)
+
+                    localStorage.setItem(TOKEN, JSON.stringify(token))
+                    localStorage.setItem(CURRENT_USER, JSON.stringify(user))
+                } 
+            } catch (error) {
+                toast.error(`${error}`)
+            }
         }
+
+        createSession()
     }, [userCredencial])
 
     useEffect(() => {
         if (error) {
-            console.log(error)
+            toast.dark(`Falha ao completar a requisição: ${error}`)
         }
     }, [error])
 
