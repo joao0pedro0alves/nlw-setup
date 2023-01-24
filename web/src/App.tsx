@@ -1,13 +1,16 @@
 import "./styles/global.css"
 import "./lib/dayjs"
 
+import {ToastProvider} from "./components/ToastProvider"
 import {AuthContextProvider} from "./contexts/Auth"
 import {Routes} from "./routes"
 
 export function App() {
     return (
-        <AuthContextProvider>
-            <Routes />
-        </AuthContextProvider>
+        <ToastProvider>
+            <AuthContextProvider>
+                <Routes />
+            </AuthContextProvider>
+        </ToastProvider>
     )
 }
