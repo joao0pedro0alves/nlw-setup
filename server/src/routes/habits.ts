@@ -2,10 +2,11 @@ import {FastifyInstance} from "fastify"
 import {z} from 'zod'
 import dayjs from 'dayjs'
 
-import {prisma} from "./lib/prisma"
+import {prisma} from "../lib/prisma"
+import {authenticate} from '../plugins/authenticate'
 
-export async function appRoutes(app: FastifyInstance) {
-    app.post('/habits', async (request) => {
+export async function habitRoutes(app: FastifyInstance) {
+    app.post('/habits',  {onRequest: [authenticate]}, async (request) => {
 
         const createHabitBody = z.object({
             title: z.string(),
@@ -26,12 +27,12 @@ export async function appRoutes(app: FastifyInstance) {
                     create: weekDays.map(weekDay => ({
                         week_day: weekDay
                     }))
-                }
+                },
             }
         })
     })
 
-    app.get('/day', async (request) => {
+    app.get('/day', {onRequest: [authenticate]}, async (request) => {
         const getDayParams = z.object({
             date: z.coerce.date()
         })
@@ -74,7 +75,7 @@ export async function appRoutes(app: FastifyInstance) {
         }
     })
 
-    app.patch('/habits/:id/toggle', async (request) => {
+    app.patch('/habits/:id/toggle', {onRequest: [authenticate]}, async (request) => {
         const getToogleHabitParams = z.object({
             id: z.string().uuid()
         })
@@ -128,7 +129,7 @@ export async function appRoutes(app: FastifyInstance) {
 
     })
 
-    app.get('/summary', async () => {
+    app.get('/summary', {onRequest: [authenticate]}, async (request) => {
         // [{date: 17/01, amount: 5, completed: 1}, {...}, {...}]
 
         const summary = await prisma.$queryRaw`
