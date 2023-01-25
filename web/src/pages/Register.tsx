@@ -11,6 +11,7 @@ import {api} from '../lib/axios'
 import {FirebaseLoading} from '../components/FirebaseLoading'
 
 export function Register() {
+    const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
@@ -27,7 +28,7 @@ export function Register() {
             try {
                 if (result) {
                     await api.post('/users', {
-                        name: 'João Pedro',
+                        name,
                         firebaseId: result.user.uid,
                         email: result.user.email,
                     })
@@ -36,6 +37,7 @@ export function Register() {
                 toast.error(`${error}`)
             }
 
+            setName('')
             setEmail('')
             setPassword('')
         }
@@ -64,8 +66,25 @@ export function Register() {
                 </div>
 
                 <p className="font-extrabold text-lg text-zinc-400 mb-4">
-                    Preencha os campos para se registrar.
+                    Preencha os campos para se registrar
                 </p>
+
+                <label
+                    className="font-semibold leading-tight mt-4"
+                    htmlFor="name"
+                >
+                    Qual seu nome ?
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    placeholder="ex.: João Pedro"
+                    className="p-4 rounded-lg mt-3 bg-zinc-800 text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                    autoFocus
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
 
                 <label
                     className="font-semibold leading-tight mt-4"
@@ -79,7 +98,6 @@ export function Register() {
                     id="email"
                     placeholder="ex.: fulano@gmail.com"
                     className="p-4 rounded-lg mt-3 bg-zinc-800 text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
-                    autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
