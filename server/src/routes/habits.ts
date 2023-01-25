@@ -5,6 +5,18 @@ import dayjs from 'dayjs'
 import {prisma} from "../lib/prisma"
 import {authenticate} from '../plugins/authenticate'
 
+import * as R from 'ramda'
+
+interface Summary {
+    id: string
+    userId: string
+    name: string
+    email: string
+    date: Date
+    completed: number
+    amount: number
+}
+
 export async function habitRoutes(app: FastifyInstance) {
     app.post('/habits',  {onRequest: [authenticate]}, async (request) => {
 
@@ -160,11 +172,67 @@ export async function habitRoutes(app: FastifyInstance) {
                     WHERE
                         HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
                         AND H.created_at <= D.date
+                        AND H.user_id = ${request.user.sub}
                 ) as amount
            FROM days D
            WHERE D.user_id = ${request.user.sub}
         `
 
         return {summary}
+    })
+
+    app.get('/summaries', async () => {
+        // [{summary, user}, {summary, user}, {summary, user}]
+
+        const allSummaries: Summary[] = await prisma.$queryRaw`
+            SELECT 
+                D.id,
+                D.date,
+                U.id as userId,
+                U.name,
+                U.email,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM day_habits DH
+                    WHERE DH.day_id = D.id
+                ) as completed,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM habit_week_days HWD
+                    JOIN habits H
+                        ON H.id = HWD.habit_id
+                    WHERE
+                        HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
+                        AND H.created_at <= D.date
+                ) as amount
+            FROM days D
+            JOIN users U
+                ON U.id = D.user_id
+        `
+
+        const withUserId = R.groupWith<Summary>((a, b) => a.userId === b.userId)
+
+        const summaries = withUserId(allSummaries).map(days => {
+            const day = days[0]
+            
+            return {
+                user: {
+                    id: day.userId,
+                    name: day.name,
+                    email: day.email,
+                },
+                summary: days.map(day => ({
+                    id: day.id,
+                    userId: day.userId,
+                    date: day.date,
+                    completed: day.completed,
+                    amount: day.amount,
+                }))
+            }
+        })
+
+        return {summaries}
     })
 }
