@@ -14,13 +14,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id         String   @id @default(cuid())
+  firebaseId String   @unique
+  name       String
+  email      String   @unique
+  createdAt  DateTime @default(now())
+
+  days   Day[]
+  habits Habit[]
+
+  @@map("users")
+}
+
 model Habit {
   id         String   @id @default(uuid())
   title      String
   created_at DateTime
 
+  user_id String?
+
   dayHabits DayHabit[]
   weekDays  HabitWeekDays[]
+
+  user User? @relation(fields: [user_id], references: [id])
 
   @@map("habits")
 }
@@ -40,9 +57,12 @@ model Day {
   id   String   @id @default(uuid())
   date DateTime
 
-  dayHabits DayHabit[]
+  user_id String?
 
-  @@unique([date])
+  dayHabits DayHabit[]
+  user      User?      @relation(fields: [user_id], references: [id])
+
+  @@unique([date, user_id])
   @@map("days")
 }
 

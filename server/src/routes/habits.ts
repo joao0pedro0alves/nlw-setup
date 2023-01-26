@@ -2,14 +2,27 @@ import {FastifyInstance} from "fastify"
 import {z} from 'zod'
 import dayjs from 'dayjs'
 
-import {prisma} from "./lib/prisma"
+import {prisma} from "../lib/prisma"
+import {authenticate} from '../plugins/authenticate'
 
-export async function appRoutes(app: FastifyInstance) {
-    app.post('/habits', async (request) => {
+import * as R from 'ramda'
+
+interface Summary {
+    id: string
+    userId: string
+    name: string
+    email: string
+    date: Date
+    completed: number
+    amount: number
+}
+
+export async function habitRoutes(app: FastifyInstance) {
+    app.post('/habits',  {onRequest: [authenticate]}, async (request) => {
 
         const createHabitBody = z.object({
             title: z.string(),
-            weekDays: z.array(z.number()).max(6),
+            weekDays: z.array(z.number()).max(7),
         })
 
         // [0, 1, 2, 3, 4, 5, 6] => Domingo, Segunda, Terça, ...
@@ -22,16 +35,17 @@ export async function appRoutes(app: FastifyInstance) {
             data: {
                 title,
                 created_at: today,
+                user_id: request.user.sub,
                 weekDays: {
                     create: weekDays.map(weekDay => ({
                         week_day: weekDay
                     }))
-                }
+                },
             }
         })
     })
 
-    app.get('/day', async (request) => {
+    app.get('/day', {onRequest: [authenticate]}, async (request) => {
         const getDayParams = z.object({
             date: z.coerce.date()
         })
@@ -49,17 +63,21 @@ export async function appRoutes(app: FastifyInstance) {
                 created_at: {
                     lte: date,
                 },
+                user_id: request.user.sub,
                 weekDays: {
                     some: {
                         week_day: weekDay
                     }
-                }
+                },
             }
         })
 
         const day = await prisma.day.findUnique({
             where: {
-                date: parsedDate.toDate()
+                date_user_id: {
+                    date: parsedDate.toDate(),
+                    user_id: request.user.sub
+                }
             },
             include: {
                 dayHabits: true
@@ -74,7 +92,7 @@ export async function appRoutes(app: FastifyInstance) {
         }
     })
 
-    app.patch('/habits/:id/toggle', async (request) => {
+    app.patch('/habits/:id/toggle', {onRequest: [authenticate]}, async (request) => {
         const getToogleHabitParams = z.object({
             id: z.string().uuid()
         })
@@ -85,14 +103,18 @@ export async function appRoutes(app: FastifyInstance) {
 
         let day = await prisma.day.findUnique({
             where: {
-                date: today
+                date_user_id: {
+                    date: today,
+                    user_id: request.user.sub
+                }
             }
         })
 
         if (!day) {
             day = await prisma.day.create({
                 data: {
-                    date: today
+                    date: today,
+                    user_id: request.user.sub
                 }
             })
         }
@@ -128,9 +150,9 @@ export async function appRoutes(app: FastifyInstance) {
 
     })
 
-    app.get('/summary', async () => {
+    app.get('/summary', {onRequest: [authenticate]}, async (request) => {
         // [{date: 17/01, amount: 5, completed: 1}, {...}, {...}]
-
+       
         const summary = await prisma.$queryRaw`
             SELECT 
                 D.id,
@@ -150,10 +172,69 @@ export async function appRoutes(app: FastifyInstance) {
                     WHERE
                         HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
                         AND H.created_at <= D.date
+                        AND H.user_id = ${request.user.sub}
                 ) as amount
            FROM days D
+           WHERE D.user_id = ${request.user.sub}
         `
 
         return {summary}
+    })
+
+    app.get('/feed', {onRequest: [authenticate]}, async (request) => {
+        // [{summary, user}, {summary, user}, {summary, user}]
+        // const today = dayjs().startOf('day').toDate()
+
+        const allSummaries: Summary[] = await prisma.$queryRaw`
+            SELECT 
+                D.id,
+                D.date,
+                U.id as userId,
+                U.name,
+                U.email,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM day_habits DH
+                    WHERE DH.day_id = D.id
+                ) as completed,
+                (
+                    SELECT 
+                        cast(count(*) as float)
+                    FROM habit_week_days HWD
+                    JOIN habits H
+                        ON H.id = HWD.habit_id
+                    WHERE
+                        HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
+                        AND H.created_at <= D.date
+                ) as amount
+            FROM days D
+            JOIN users U
+                ON U.id = D.user_id
+            WHERE D.user_id != ${request.user.sub}
+            ORDER By D.user_id ASC
+        `
+
+        const withUserId = R.groupWith<Summary>((a, b) => a.userId === b.userId)
+
+        const feed = withUserId(allSummaries).map(days => {
+            const day = days[0]
+            
+            return {
+                user: {
+                    id: day.userId,
+                    name: day.name,
+                    email: day.email,
+                },
+                summary: days.map(day => ({
+                    id: day.id,
+                    date: day.date,
+                    completed: day.completed,
+                    amount: day.amount,
+                }))
+            }
+        })
+
+        return {feed}
     })
 }

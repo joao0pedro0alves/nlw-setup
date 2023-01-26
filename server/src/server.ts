@@ -1,15 +1,33 @@
-import Fastify from 'fastify'
-import cors from '@fastify/cors'
+import Fastify from "fastify"
+import cors from "@fastify/cors"
+import jwt from '@fastify/jwt'
+import * as dotenv from "dotenv"
 
-import { appRoutes } from './routes'
+import {habitRoutes} from "./routes/habits"
+import {authRoutes} from "./routes/auth"
 
-const app = Fastify()
+dotenv.config()
 
-app.register(cors)
-app.register(appRoutes)
+async function bootstrap() {
+    const app = Fastify({
+        logger: true
+    })
 
-app.listen({
-    port: 3333,
-}).then(() => {
-    console.log('Server running on port 3333')
-})
+    await app.register(cors, {
+        origin: true
+    })
+
+    await app.register(jwt, {
+        secret: process.env.JWT_ACCESS_SECRET,
+    })
+
+    await app.register(authRoutes)
+    await app.register(habitRoutes)
+
+    await app.listen({
+        port: 3333,
+        host: '0.0.0.0'
+    })
+}
+
+bootstrap()
