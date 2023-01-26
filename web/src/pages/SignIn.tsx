@@ -8,8 +8,8 @@ import {useAuth} from '../hooks/useAuth'
 import {FirebaseLoading} from '../components/FirebaseLoading'
 
 export function Signin() {
-    const [email, setEmail] = useState('joao.alves@gmail.com')
-    const [password, setPassword] = useState('abc@123')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
 
     const {signIn, loading} = useAuth()
 

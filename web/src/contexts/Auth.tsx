@@ -6,7 +6,8 @@ import {auth} from '../lib/firebase'
 import {CURRENT_USER, TOKEN} from "../constants/storage"
 import {api} from "../lib/axios"
 
-interface User {
+export interface User {
+    id: string
     name: string
     email: string
 }

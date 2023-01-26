@@ -152,7 +152,7 @@ export async function habitRoutes(app: FastifyInstance) {
 
     app.get('/summary', {onRequest: [authenticate]}, async (request) => {
         // [{date: 17/01, amount: 5, completed: 1}, {...}, {...}]
-
+       
         const summary = await prisma.$queryRaw`
             SELECT 
                 D.id,
@@ -181,8 +181,9 @@ export async function habitRoutes(app: FastifyInstance) {
         return {summary}
     })
 
-    app.get('/summaries', async () => {
+    app.get('/feed', {onRequest: [authenticate]}, async (request) => {
         // [{summary, user}, {summary, user}, {summary, user}]
+        // const today = dayjs().startOf('day').toDate()
 
         const allSummaries: Summary[] = await prisma.$queryRaw`
             SELECT 
@@ -210,11 +211,13 @@ export async function habitRoutes(app: FastifyInstance) {
             FROM days D
             JOIN users U
                 ON U.id = D.user_id
+            WHERE D.user_id != ${request.user.sub}
+            ORDER By D.user_id ASC
         `
 
         const withUserId = R.groupWith<Summary>((a, b) => a.userId === b.userId)
 
-        const summaries = withUserId(allSummaries).map(days => {
+        const feed = withUserId(allSummaries).map(days => {
             const day = days[0]
             
             return {
@@ -225,7 +228,6 @@ export async function habitRoutes(app: FastifyInstance) {
                 },
                 summary: days.map(day => ({
                     id: day.id,
-                    userId: day.userId,
                     date: day.date,
                     completed: day.completed,
                     amount: day.amount,
@@ -233,6 +235,6 @@ export async function habitRoutes(app: FastifyInstance) {
             }
         })
 
-        return {summaries}
+        return {feed}
     })
 }
