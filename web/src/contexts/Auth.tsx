@@ -19,6 +19,7 @@ interface SignInCredencials {
 
 interface AuthContextData {
     user: User
+    firebaseLoading: boolean
     loading: boolean
     signIn: (credencials: SignInCredencials) => void
     signOut: () => void
@@ -46,10 +47,12 @@ export function AuthContextProvider({children}: AuthProviderProps) {
         return {} as User
     })
 
+    const [loading, setLoading] = useState(false)
+
     const [
         signInWithEmailAndPassword,
         userCredencial,
-        loading,
+        firebaseLoading,
         error
     ] = useSignInWithEmailAndPassword(auth)
 
@@ -57,6 +60,8 @@ export function AuthContextProvider({children}: AuthProviderProps) {
 
         async function createSession() {
             try {
+                setLoading(true)
+
                 if (userCredencial) {
         
                     const tokenResponse = await api.post('/session', {
@@ -76,6 +81,8 @@ export function AuthContextProvider({children}: AuthProviderProps) {
                 } 
             } catch (error) {
                 toast.error(`${error}`)
+            } finally {
+                setLoading(false)
             }
         }
 
@@ -103,6 +110,7 @@ export function AuthContextProvider({children}: AuthProviderProps) {
             value={{
                 user,
                 loading,
+                firebaseLoading,
                 signIn,
                 signOut,
             }}

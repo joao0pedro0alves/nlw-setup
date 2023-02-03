@@ -7,7 +7,7 @@ export function AuthRoutes() {
         <Switch>
             <Route path="/signIn" component={Signin} exact />
             <Route path="/register" component={Register} exact />
-            <Route path="/" component={() => <Redirect to="/signIn" />} exact />
+            <Route path="/" component={() => <Redirect to="/signIn" />} />
         </Switch>
     )
 }

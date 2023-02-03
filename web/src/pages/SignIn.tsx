@@ -11,15 +11,23 @@ export function Signin() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
-    const {signIn, loading} = useAuth()
+    const {signIn, firebaseLoading, loading} = useAuth()
 
     function handleSignIn(event: FormEvent) {
         event.preventDefault()
         signIn({email, password})
     }
 
-    if (loading) {
-        return <FirebaseLoading />
+    if (firebaseLoading || loading) {
+        return (
+            <FirebaseLoading
+                loadingText={
+                    firebaseLoading
+                        ? 'Autenticando usuário'
+                        : 'Buscando dados do usuário'
+                }
+            />
+        )
     }
 
     return (
